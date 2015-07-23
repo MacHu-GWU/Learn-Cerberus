@@ -18,8 +18,6 @@ Validation Rules
 """
 from cerberus import Validator
 
-
-
 def basic_usage_example():
     """
     """
@@ -110,7 +108,7 @@ def empty_example():
 # empty_example()
 
 def item_example():
-    """定义嵌套的字典中的key, value
+    """定义嵌套的字典中的key, value的 data type
     """
     schema = {"rows": {"type": "list", "items": {"sku": {"type": "string"}, "price": {"type": "integer"}}}}
     v = Validator(schema)
@@ -122,4 +120,73 @@ def item_example():
     print(v.validate(document, schema))
     print(v.errors)
     
-item_example()
+# item_example()
+
+def anyof_example():
+    """定义: 值需要满足以下几个条件中的任意一个
+    除了anyof, 类似的还有: allof, noneof, oneof
+    """
+    schema = {"value": {"type": "number", "anyof": [{"min": 0, "max": 10}, {"min": 100, "max": 1000}]}}
+    v = Validator(schema)
+    
+    document = {"value": 1}
+    print(v.validate(document, schema))
+    
+    document = {"value": 111}
+    print(v.validate(document, schema))
+    
+    document = {"value": 11}
+    print(v.validate(document, schema))
+    print(v.errors)
+    
+# anyof_example()
+
+def allow_unknown_example():
+    """默认需要data中所有的key都要在schema中被预定义。而设置allow_unknown = True可以允许出现
+    没有被预定义的key
+    """
+    schema = {"name": {"type": "string", "maxlength": 10}}
+    v = Validator(schema)
+    print(v.validate({"name": "john", "sex": "M"}))
+    print(v.errors)
+    
+    v.allow_unknown = True
+    print(v.validate({"name": "john", "sex": "M"}))
+    
+# allow_unknown_example()
+
+def type_coercion_example():
+    """对于定义了coerce: func的field, cerberus会尝试调用func(value)对值进行处理之后再执行validate,
+    若期间抛出异常, 则会返回False
+    """
+    schema = {"value": {"type": "number"}}
+    v = Validator(schema)
+    
+    document = {"value": "1"}
+    print(v.validate(document))
+    print(v.errors)
+    
+    schema = {"value": {"type": "number", "coerce": int}}
+    v = Validator(schema)
+    
+    document = {"value": "1"}
+    print(v.validate(document))
+    print(v.document)
+    
+# type_coercion_example()
+
+def validated_method_example():
+    """validated能返回验证后的document, 下面的代码给出了一种对输入的数据流进行处理的例子。
+    """
+    schema = {"value": {"type": "number"}}
+    v = Validator(schema)
+    
+    documents = [
+        {"value": 1},
+        {"value": [1, 2, 3]},
+        {"value": 2},
+        ]
+    valid_documents = [x for x in [v.validated(y) for y in documents] if x is not None]
+    print(valid_documents)
+    
+# validated_method_example()
